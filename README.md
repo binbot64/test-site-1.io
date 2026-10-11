@@ -1,9 +1,5 @@
-# test-site-1.io-
+# Conlang Workshop
 
-----------------------
-- test-site 1
-- test-site 2
-- test-site 3
-----------------------
-- game-official-site
-----------------------
+A personal conlang notebook for storing vocabulary, grammar, phonology, writing systems, and ideas for multiple invented languages.
+
+Open `index.html` in the browser to use it.
