@@ -84,7 +84,9 @@
       .sidebar .new-btn,
       .toolbar button,
       .add-item-btn,
-      .compact-btn {
+      .compact-btn,
+      .ipa-button,
+      .preview-btn {
         border: 1px solid rgba(125, 211, 252, 0.25);
         background: rgba(125, 211, 252, 0.08);
         color: var(--text);
@@ -97,7 +99,9 @@
       .sidebar .new-btn:hover,
       .toolbar button:hover,
       .add-item-btn:hover,
-      .compact-btn:hover {
+      .compact-btn:hover,
+      .ipa-button:hover,
+      .preview-btn:hover {
         transform: translateY(-1px);
         border-color: rgba(125, 211, 252, 0.45);
       }
@@ -286,6 +290,68 @@
         background: rgba(255, 125, 125, 0.08);
       }
 
+      .ipa-panel {
+        background: rgba(255, 255, 255, 0.016);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      .ipa-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+
+      .ipa-chart {
+        display: grid;
+        gap: 12px;
+      }
+
+      .ipa-row {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .ipa-button {
+        min-height: 52px;
+        width: 100%;
+        padding: 8px 6px;
+        font-size: 1.05rem;
+        border-radius: 10px;
+        display: grid;
+        place-items: center;
+      }
+
+      .ipa-button:hover {
+        background: rgba(125, 211, 252, 0.14);
+      }
+
+      .vowel-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .preview-box {
+        margin-top: 12px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: rgba(125, 211, 252, 0.03);
+        border-radius: 12px;
+        color: var(--text);
+      }
+
+      .preview-box strong {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--gold);
+      }
+
       @media (max-width: 980px) {
         .app {
           grid-template-columns: 1fr;
@@ -381,7 +447,7 @@
 
             <div class="field">
               <label for="phonVowels">Vowels</label>
-              <textarea id="phonVowels" placeholder="/a, e, i, o, u/ "></textarea>
+              <textarea id="phonVowels" placeholder="/a, e, i, o, u/"></textarea>
             </div>
 
             <div class="field">
@@ -394,9 +460,24 @@
               <textarea id="phonNotes" placeholder="Sound symbolism, alliteration patterns, use of glottal stops, etc."></textarea>
             </div>
 
+            <div class="field wide">
+              <div class="input-label">IPA Sound Preview</div>
+              <div class="ipa-panel">
+                <div class="ipa-head">
+                  <strong>Interactive chart</strong>
+                  <button id="ipaPlayBtn" class="preview-btn" type="button">Play sample</button>
+                </div>
+                <div id="ipaChart" class="ipa-chart"></div>
+                <div class="preview-box">
+                  <strong>Preview text</strong>
+                  <div id="ipaPreviewText">sa-ra-te-ka</div>
+                </div>
+              </div>
+            </div>
+
             <div class="field">
               <label for="gramWordOrder">Word Order</label>
-              <textarea id="gramWordOrder" placeholder="SOV" ></textarea>
+              <textarea id="gramWordOrder" placeholder="SOV"></textarea>
             </div>
 
             <div class="field">
@@ -406,7 +487,7 @@
 
             <div class="field">
               <label for="gramTense">Tense / Aspect</label>
-              <textarea id="gramTense" placeholder="Past, present, future with aspectual particles." ></textarea>
+              <textarea id="gramTense" placeholder="Past, present, future with aspectual particles."></textarea>
             </div>
 
             <div class="field">
@@ -539,6 +620,7 @@
       };
 
       const state = loadState();
+      const defaultIpaSymbols = ["p", "t", "k", "b", "d", "g", "m", "n", "l", "s", "ʃ", "h", "i", "e", "a", "o", "u"];
 
       function loadState() {
         try {
@@ -589,6 +671,96 @@
           examples: [],
           notes: []
         };
+      }
+
+      function extractIpaSymbols(value, fallback = defaultIpaSymbols) {
+        if (!value || !String(value).trim()) return fallback;
+        const cleaned = String(value).replace(/\s+/g, " ");
+        const matches = cleaned.match(/[A-Za-zəɛɪʊɔæɑɐɒɕɖɘɚɜɝɞɠɡɢɣɤɥɦɧɨɩɪɫɬɭɮɯɰɱɲɳɴɵɶɷɸɹɺɻɼɽɾʀʁʂʃʄʅʆʇʈʉʊʋʌʍʎʏʐʑʒʓʔʕʖʗʘʙʛʜʝʟʠʡʢʣʤʥʦʧʨʩʪʫʬʭʮʯːˑ̴̪̩̯̥̈́̂̌̚ʰʱʲʳʴʵʶʷʸ]/g) || [];
+        return matches.length ? [...new Set(matches)].slice(0, 12) : fallback;
+      }
+
+      function generatePreviewText(lang) {
+        const fromLexicon = (lang.lexicon || [])
+          .map((entry) => (entry.pronunciation || entry.term || "").trim())
+          .filter(Boolean)
+          .slice(0, 3);
+
+        if (fromLexicon.length) {
+          return fromLexicon.join("-").replace(/\s+/g, "-").replace(/--+/g, "-") || "sa-ra-te-ka";
+        }
+
+        if (lang.name) {
+          return `${(lang.name || "sa").slice(0, 2).toLowerCase()}-ra-te-ka`;
+        }
+
+        return "sa-ra-te-ka";
+      }
+
+      function speakPreview() {
+        const lang = currentConlang();
+        if (!window.speechSynthesis) {
+          alert("Your browser does not support speech synthesis. The IPA chart will still preview visually.");
+          return;
+        }
+
+        const text = generatePreviewText(lang).replace(/-/g, " ");
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = "en-US";
+        utterance.rate = 0.78;
+        utterance.pitch = 1.1;
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      }
+
+      function renderIpaChart() {
+        const lang = currentConlang();
+        const chartRoot = document.getElementById("ipaChart");
+        const ipaText = document.getElementById("ipaPreviewText");
+        const vowels = extractIpaSymbols(lang?.phonology?.vowels || "", ["i", "e", "a", "o", "u"]);
+        const consonants = extractIpaSymbols(lang?.phonology?.consonants || "", ["p", "t", "k", "b", "d", "g", "m", "n", "l", "s", "ʃ", "h"]);
+
+        ipaText.textContent = generatePreviewText(lang);
+
+        const consonantRow = `
+          <div class="ipa-row">
+            ${consonants.map((symbol) => `<button class="ipa-button" type="button" data-symbol="${escapeAttribute(symbol)}">${escapeHtml(symbol)}</button>`).join("")}
+          </div>
+        `;
+
+        const vowelRow = `
+          <div class="vowel-grid">
+            ${vowels.map((symbol) => `<button class="ipa-button" type="button" data-symbol="${escapeAttribute(symbol)}">${escapeHtml(symbol)}</button>`).join("")}
+          </div>
+        `;
+
+        chartRoot.innerHTML = `
+          <div class="ipa-row" style="grid-template-columns: repeat(${Math.max(6, consonants.length)}, minmax(0, 1fr));">
+            <div class="input-label" style="grid-column: 1 / -1; margin-bottom: 4px;">Consonants</div>
+            ${consonants.map((symbol) => `<button class="ipa-button" type="button" data-symbol="${escapeAttribute(symbol)}">${escapeHtml(symbol)}</button>`).join("")}
+          </div>
+          <div class="vowel-grid">
+            <div class="input-label" style="grid-column: 1 / -1; margin-bottom: 4px;">Vowels</div>
+            ${vowels.map((symbol) => `<button class="ipa-button" type="button" data-symbol="${escapeAttribute(symbol)}">${escapeHtml(symbol)}</button>`).join("")}
+          </div>
+        `;
+
+        chartRoot.querySelectorAll(".ipa-button").forEach((button) => {
+          button.addEventListener("click", () => {
+            const symbol = button.dataset.symbol;
+            if (!symbol) return;
+            const text = `${symbol}${symbol}`;
+            const previewText = document.getElementById("ipaPreviewText");
+            previewText.textContent = text;
+            if (window.speechSynthesis) {
+              const utterance = new SpeechSynthesisUtterance(symbol);
+              utterance.lang = "en-US";
+              utterance.rate = 0.9;
+              speechSynthesis.cancel();
+              speechSynthesis.speak(utterance);
+            }
+          });
+        });
       }
 
       function renderConlangList() {
@@ -692,6 +864,7 @@
             currentConlang().lexicon[index][field] = el.value;
             saveState();
             renderConlangList();
+            renderIpaChart();
           });
         });
       }
@@ -811,6 +984,7 @@
         saveState();
         renderConlangList();
         renderConlangDetails();
+        renderIpaChart();
       }
 
       function addConlang() {
@@ -901,6 +1075,7 @@
         document.getElementById("addLexiconBtn").addEventListener("click", addLexiconEntry);
         document.getElementById("addExampleBtn").addEventListener("click", addExampleEntry);
         document.getElementById("addNoteBtn").addEventListener("click", addNoteEntry);
+        document.getElementById("ipaPlayBtn").addEventListener("click", speakPreview);
         document.getElementById("importInput").addEventListener("change", (event) => {
           importData(event.target.files[0]);
           event.target.value = "";
@@ -934,6 +1109,7 @@
         ensureActiveConlang();
         renderConlangList();
         renderConlangDetails();
+        renderIpaChart();
         renderLexicon();
         renderExamples();
         renderNotes();
@@ -944,130 +1120,3 @@
     </script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
